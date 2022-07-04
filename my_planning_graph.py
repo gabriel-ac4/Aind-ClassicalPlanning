@@ -110,7 +110,15 @@ class PlanningGraph:
         layer.update_mutexes()
         self.literal_layers = [layer]
         self.action_layers = []
-       
+    
+    def h_levelcost(self,goal):
+        
+        lv = 0
+        for layer in self.literal_layers:
+                if goal in layer:
+                    lv += 1
+        return lv
+    
     def h_levelsum(self):
         """ Calculate the level sum heuristic for the planning graph
         The level sum is the sum of the level costs of all the goal literals
@@ -129,14 +137,11 @@ class PlanningGraph:
         Russell-Norvig 10.3.1 (3rd Edition)
         """
         costs = []
-        level = 0
-        level_sum = 0
         self.fill()
-        
+            
         for goal in self.goal:
-              level = self.h_levelcost(goal)
-              level_sum += level
-        return level_sum
+              costs.append(self.h_levelcost(goal))
+        return sum(costs)
         
     def h_maxlevel(self):
         """ Calculate the max level heuristic for the planning graph
@@ -155,14 +160,14 @@ class PlanningGraph:
         -----
         WARNING: you should expect long runtimes using this heuristic with A*
         """
-        # cost of achieving each goal
-        costs = []   
-        self.fill()
-                 
-        for goal in self.goal_literals:
-                costs.append(self.LevelCost(goal))             
-        return max(costs)
-        
+
+        self.fill() 
+        costs = []                   
+        # loop goals, get level of each goal one by one
+        for goal in self.goal:
+            costs.append(self.h_levelcost(goal))    
+        return max(costs)
+    
     def h_setlevel(self):
         """ Calculate the set level heuristic for the planning graph
         The set level of a planning graph is the first level where all goals
@@ -190,11 +195,12 @@ class PlanningGraph:
                 
         goalsAreMutex = False
         for goalA in self.goal:
-            for goalB in self.goal:
-                if layer.is_mutex(goalA,goalB):
-                    goalsAreMutex = True
-            if not goalsAreMutex:
-                  return level
+                for goalB in self.goal:
+                    if layer.is_mutex(goalA,goalB):
+                            goalsAreMutex = True
+                            level += 1
+                    if not goalsAreMutex:
+                            return level
 
     ##############################################################################
     #                     DO NOT MODIFY CODE BELOW THIS LINE                     #
